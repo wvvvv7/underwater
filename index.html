@@ -3,108 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Underwater Archive</title>
+    <title>The Underwater Archive</title>
     <style>
-        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: serif; }
-        #canvas3d { width: 100vw; height: 100vh; display: block; }
+        body, html { margin: 0; padding: 0; background: #000; font-family: serif; }
 
-        /* Cinematic Navigation Arrows */
-        .nav-arrow {
-            position: absolute;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 80px;
-            font-weight: 100;
-            cursor: pointer;
-            z-index: 10;
-            opacity: 0; /* Hidden initially */
-            transition: opacity 0.6s ease, color 0.3s;
-            user-select: none;
-            pointer-events: none;
-        }
-        
-        /* This class makes the arrows appear */
-        .nav-arrow.active {
-            opacity: 0.3;
-            pointer-events: auto;
+        /* Each section provides the "scroll room" for the Spline animations */
+        section {
+            position: relative;
+            width: 100%;
+            height: 300vh; /* Adjust this height to make the scroll faster or slower */
         }
 
-        .nav-arrow:hover { opacity: 1; color: #fff; }
+        /* The viewer stays fixed to the eye while the section scrolls past */
+        spline-viewer {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 100vh;
+            display: block;
+        }
     </style>
 </head>
 <body>
 
-    <button id="prevBtn" class="nav-arrow">‹</button>
-    <button id="nextBtn" class="nav-arrow">›</button>
+    <section id="act-one">
+        <script type="module" src="https://unpkg.com/@splinetool/viewer/build/spline-viewer.js"></script>
+        <spline-viewer url="./scene.splinecode" events-target="global"></spline-viewer>
+    </section>
 
-    <canvas id="canvas3d"></canvas>
+    <section id="act-two">
+        <spline-viewer url="./scene_falsecolor.splinecode" events-target="global"></spline-viewer>
+    </section>
 
-    <script type="module">
-        /* We import both Spline and THREE to fix the definition error */
-        import { Application } from 'https://unpkg.com/@splinetool/runtime';
-        import * as THREE from 'https://unpkg.com/three@0.149.0/build/three.module.js';
-
-        const canvas = document.getElementById('canvas3d');
-        const app = new Application(canvas);
-
-        const images = [
-            './images/1.jpg', './images/2.jpg', './images/3.jpg', './images/4.jpg',
-            './images/5.jpg', './images/6.jpg', './images/7.jpg', './images/8.jpg',
-            './images/9.jpg', './images/10.jpg', './images/11.jpg', './images/12.jpg'
-        ];
-        let index = 0;
-
-        app.load('./scene.splinecode').then(() => {
-            const rect = app.findObjectByName('Falsecolor Rectangle');
-            const prevBtn = document.getElementById('prevBtn');
-            const nextBtn = document.getElementById('nextBtn');
-
-            const applyTexture = (i) => {
-                const loader = new THREE.TextureLoader();
-                loader.load(images[i], (tex) => {
-                    rect.material.map = tex;
-                    rect.material.needsUpdate = true;
-                });
-            };
-
-            applyTexture(index);
-
-            /* This loop tracks the rectangle as you scroll */
-            function updateArrows() {
-                if (rect) {
-                    /* Check if the rectangle is visible and active on screen */
-                    /* The 0.1 threshold ensures they wait for the fade-in */
-                    const isShowing = rect.visible && rect.opacity > 0.1;
-
-                    if (isShowing) {
-                        /* Find the 2D screen coordinates of the 3D rectangle */
-                        const pos = app.project(rect.position);
-                        
-                        /* Position arrows to the left and right of the rectangle */
-                        /* Adjust the gap to move them closer or further away */
-                        const gap = window.innerWidth * 0.15;
-
-                        prevBtn.style.left = `${pos.x - gap}px`;
-                        prevBtn.style.top = `${pos.y}px`;
-                        nextBtn.style.left = `${pos.x + gap}px`;
-                        nextBtn.style.top = `${pos.y}px`;
-
-                        prevBtn.classList.add('active');
-                        nextBtn.classList.add('active');
-                    } else {
-                        prevBtn.classList.remove('active');
-                        nextBtn.classList.remove('active');
-                    }
-                }
-                requestAnimationFrame(updateArrows);
-            }
-
-            updateArrows();
-
-            nextBtn.onclick = () => { index = (index + 1) % images.length; applyTexture(index); };
-            prevBtn.onclick = () => { index = (index - 1 + images.length) % images.length; applyTexture(index); };
-        });
-    </script>
 </body>
 </html>

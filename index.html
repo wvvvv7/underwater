@@ -24,6 +24,7 @@
             pointer-events: none;
         }
         
+        /* This class makes the arrows appear */
         .nav-arrow.active {
             opacity: 0.3;
             pointer-events: auto;
@@ -73,6 +74,7 @@
             function updateArrows() {
                 if (rect) {
                     /* Check if the rectangle is visible and active on screen */
+                    /* The 0.1 threshold ensures they wait for the fade-in */
                     const isShowing = rect.visible && rect.opacity > 0.1;
 
                     if (isShowing) {
@@ -80,7 +82,8 @@
                         const pos = app.project(rect.position);
                         
                         /* Position arrows to the left and right of the rectangle */
-                        const gap = window.innerWidth * 0.18;
+                        /* Adjust the gap to move them closer or further away */
+                        const gap = window.innerWidth * 0.15;
 
                         prevBtn.style.left = `${pos.x - gap}px`;
                         prevBtn.style.top = `${pos.y}px`;

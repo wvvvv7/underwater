@@ -3,35 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Underwater Archive</title>
+    <title>The Dual Depths</title>
     <style>
-        body, html { margin: 0; padding: 0; background: #000; font-family: serif; }
+        body, html { margin: 0; padding: 0; background: #000; overflow-x: hidden; }
 
-        /* Each section provides the "scroll room" for the Spline animations */
-        section {
+        /* Each section acts as a container for the scroll journey */
+        .scroll-container {
             position: relative;
             width: 100%;
-            height: 300vh; /* Adjust this height to make the scroll faster or slower */
+            /* 200vh gives you space to scroll without the scene moving away too fast */
+            height: 200vh; 
         }
 
-        /* The viewer stays fixed to the eye while the section scrolls past */
+        /* The Spline Viewer stays pinned to the screen during the scroll */
         spline-viewer {
             position: sticky;
             top: 0;
             width: 100%;
             height: 100vh;
             display: block;
+            z-index: 1;
+        }
+
+        /* Act II sits naturally below Act I */
+        #act-two {
+            background-color: #000;
         }
     </style>
 </head>
 <body>
 
-    <section id="act-one">
-        <script type="module" src="https://unpkg.com/@splinetool/viewer/build/spline-viewer.js"></script>
+    <script type="module" src="https://unpkg.com/@splinetool/viewer/build/spline-viewer.js"></script>
+
+    <section class="scroll-container" id="act-one">
         <spline-viewer url="./scene.splinecode" events-target="global"></spline-viewer>
     </section>
 
-    <section id="act-two">
+    <section class="scroll-container" id="act-two">
         <spline-viewer url="./scene_falsecolor.splinecode" events-target="global"></spline-viewer>
     </section>
 

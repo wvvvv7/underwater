@@ -8,27 +8,28 @@
         body, html { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: serif; }
         #canvas3d { width: 100vw; height: 100vh; display: block; }
 
+        /* Cinematic Navigation Arrows */
         .nav-arrow {
             position: absolute;
             background: none;
             border: none;
             color: white;
-            font-size: 60px;
+            font-size: 80px;
             font-weight: 100;
             cursor: pointer;
             z-index: 10;
-            opacity: 0; /* Hidden by default */
-            transition: opacity 0.5s ease, transform 0.3s;
+            opacity: 0; /* Hidden initially */
+            transition: opacity 0.6s ease, color 0.3s;
             user-select: none;
-            pointer-events: none; /* Cannot click while hidden */
+            pointer-events: none;
         }
         
-        .nav-arrow.visible {
-            opacity: 0.4;
+        .nav-arrow.active {
+            opacity: 0.3;
             pointer-events: auto;
         }
 
-        .nav-arrow:hover { opacity: 1; transform: scale(1.2); }
+        .nav-arrow:hover { opacity: 1; color: #fff; }
     </style>
 </head>
 <body>
@@ -39,12 +40,18 @@
     <canvas id="canvas3d"></canvas>
 
     <script type="module">
+        /* We import both Spline and THREE to fix the definition error */
         import { Application } from 'https://unpkg.com/@splinetool/runtime';
+        import * as THREE from 'https://unpkg.com/three@0.149.0/build/three.module.js';
 
         const canvas = document.getElementById('canvas3d');
         const app = new Application(canvas);
 
-        const images = ['./images/1.jpg', './images/2.jpg', './images/3.jpg', './images/4.jpg', './images/5.jpg', './images/6.jpg', './images/7.jpg', './images/8.jpg', './images/9.jpg', './images/10.jpg', './images/11.jpg', './images/12.jpg'];
+        const images = [
+            './images/1.jpg', './images/2.jpg', './images/3.jpg', './images/4.jpg',
+            './images/5.jpg', './images/6.jpg', './images/7.jpg', './images/8.jpg',
+            './images/9.jpg', './images/10.jpg', './images/11.jpg', './images/12.jpg'
+        ];
         let index = 0;
 
         app.load('./scene.splinecode').then(() => {
@@ -52,7 +59,7 @@
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
 
-            const updateGallery = (i) => {
+            const applyTexture = (i) => {
                 const loader = new THREE.TextureLoader();
                 loader.load(images[i], (tex) => {
                     rect.material.map = tex;
@@ -60,42 +67,40 @@
                 });
             };
 
-            updateGallery(index);
+            applyTexture(index);
 
-            // This loop runs every frame to track the rectangle
-            function animate() {
+            /* This loop tracks the rectangle as you scroll */
+            function updateArrows() {
                 if (rect) {
-                    // 1. Check if the object is visible and has opacity
-                    // We use a threshold to decide when to show the arrows
-                    const isVisible = rect.visible && rect.opacity > 0.1;
+                    /* Check if the rectangle is visible and active on screen */
+                    const isShowing = rect.visible && rect.opacity > 0.1;
 
-                    if (isVisible) {
-                        // 2. Project the 3D position to 2D screen coordinates
-                        const screenPos = app.project(rect.position);
+                    if (isShowing) {
+                        /* Find the 2D screen coordinates of the 3D rectangle */
+                        const pos = app.project(rect.position);
                         
-                        // 3. Position arrows beside the rectangle
-                        // We offset them by about 20% of the screen width
-                        const offset = window.innerWidth * 0.15;
+                        /* Position arrows to the left and right of the rectangle */
+                        const gap = window.innerWidth * 0.18;
 
-                        prevBtn.style.left = `${screenPos.x - offset}px`;
-                        prevBtn.style.top = `${screenPos.y}px`;
-                        nextBtn.style.left = `${screenPos.x + offset}px`;
-                        nextBtn.style.top = `${screenPos.y}px`;
+                        prevBtn.style.left = `${pos.x - gap}px`;
+                        prevBtn.style.top = `${pos.y}px`;
+                        nextBtn.style.left = `${pos.x + gap}px`;
+                        nextBtn.style.top = `${pos.y}px`;
 
-                        prevBtn.classList.add('visible');
-                        nextBtn.classList.add('visible');
+                        prevBtn.classList.add('active');
+                        nextBtn.classList.add('active');
                     } else {
-                        prevBtn.classList.remove('visible');
-                        nextBtn.classList.remove('visible');
+                        prevBtn.classList.remove('active');
+                        nextBtn.classList.remove('active');
                     }
                 }
-                requestAnimationFrame(animate);
+                requestAnimationFrame(updateArrows);
             }
 
-            animate();
+            updateArrows();
 
-            nextBtn.onclick = () => { index = (index + 1) % images.length; updateGallery(index); };
-            prevBtn.onclick = () => { index = (index - 1 + images.length) % images.length; updateGallery(index); };
+            nextBtn.onclick = () => { index = (index + 1) % images.length; applyTexture(index); };
+            prevBtn.onclick = () => { index = (index - 1 + images.length) % images.length; applyTexture(index); };
         });
     </script>
 </body>

@@ -5,27 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Underwater Archive</title>
     <style>
-        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; }
-        canvas { display: block; width: 100vw; height: 100vh; }
+        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: serif; }
+        
+        /* The 3D Canvas must fill the entire screen */
+        #canvas3d { width: 100vw; height: 100vh; display: block; }
 
-        /* A subtle hint for the user */
-        #hint {
+        /* Elegant Navigation Arrows */
+        .nav-arrow {
             position: absolute;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
             color: rgba(255, 255, 255, 0.3);
-            font-family: serif;
-            letter-spacing: 2px;
-            font-size: 12px;
-            pointer-events: none;
-            text-transform: uppercase;
+            font-size: 80px;
+            font-weight: 100;
+            cursor: pointer;
+            z-index: 10;
+            transition: color 0.4s, transform 0.4s;
+            padding: 0 30px;
+            user-select: none;
         }
+        .nav-arrow:hover { color: #fff; transform: translateY(-50%) scale(1.1); }
+        #prevBtn { left: 5%; }
+        #nextBtn { right: 5%; }
+
+        /* Lightbox for the expanded view */
+        #lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+        #lightbox img { max-width: 90%; max-height: 90%; border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
 
-    <div id="hint">Click the frame to explore</div>
+    <button id="prevBtn" class="nav-arrow">‹</button>
+    <button id="nextBtn" class="nav-arrow">›</button>
+
+    <div id="lightbox"><img id="fullView" src=""></div>
+
     <canvas id="canvas3d"></canvas>
 
     <script type="module">
@@ -42,6 +66,7 @@
         let index = 0;
 
         app.load('./scene.splinecode').then(() => {
+            // This name must match the sidebar name in Spline exactly
             const rect = app.findObjectByName('Falsecolor Rectangle');
 
             const applyTexture = (i) => {
@@ -56,15 +81,28 @@
             // Display the first image immediately
             applyTexture(index);
 
-            // The rectangle now acts as the button
+            document.getElementById('nextBtn').onclick = () => {
+                index = (index + 1) % images.length;
+                applyTexture(index);
+            };
+
+            document.getElementById('prevBtn').onclick = () => {
+                index = (index - 1 + images.length) % images.length;
+                applyTexture(index);
+            };
+
             app.on('mouseDown', (e) => {
                 if (e.target.name === 'Falsecolor Rectangle') {
-                    // Move to the next image
-                    index = (index + 1) % images.length;
-                    applyTexture(index);
+                    const lb = document.getElementById('lightbox');
+                    document.getElementById('fullView').src = images[index];
+                    lb.style.display = 'flex';
                 }
             });
         });
+
+        document.getElementById('lightbox').onclick = () => {
+            document.getElementById('lightbox').style.display = 'none';
+        };
     </script>
 </body>
 </html>

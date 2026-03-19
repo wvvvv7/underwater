@@ -3,54 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Image Gallery</title>
+    <title>The Underwater Gallery</title>
     <style>
-        body, html { margin: 0; padding: 0; background: #000; font-family: sans-serif; overflow: hidden; }
+        body, html { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: sans-serif; }
         canvas { display: block; width: 100%; height: 100vh; }
 
-        /* Navigation UI */
-        .controls {
+        /* Navigation Buttons */
+        .ui-layer {
             position: absolute;
-            bottom: 30px;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 20px;
+            gap: 25px;
             z-index: 10;
         }
         button {
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: 1px solid white;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 24px;
             cursor: pointer;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 12px;
         }
-        button:hover { background: rgba(255, 255, 255, 0.3); }
+        button:hover { background: rgba(255, 255, 255, 0.2); border-color: #fff; }
 
-        /* Lightbox Overlay */
+        /* The Lightbox */
         #lightbox {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             z-index: 100;
             justify-content: center;
             align-items: center;
-            cursor: zoom-out;
+            cursor: pointer;
         }
-        #lightbox img { max-width: 90%; max-height: 90%; border: 2px solid white; }
+        #lightbox img { max-width: 85%; max-height: 85%; border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
 
-    <div class="controls">
-        <button id="prev">Previous</button>
-        <button id="next">Next</button>
+    <div class="ui-layer">
+        <button id="prevBtn">Previous</button>
+        <button id="nextBtn">Next</button>
     </div>
 
     <div id="lightbox">
-        <img id="expanded-img" src="" alt="Expanded View">
+        <img id="fullView" src="" alt="Expanded View">
     </div>
 
     <canvas id="canvas3d"></canvas>
@@ -61,51 +65,48 @@
         const canvas = document.getElementById('canvas3d');
         const app = new Application(canvas);
 
-        // List of your 12 images
-        const imageList = [
+        const photos = [
             './images/1.jpg', './images/2.jpg', './images/3.jpg', './images/4.jpg',
             './images/5.jpg', './images/6.jpg', './images/7.jpg', './images/8.jpg',
             './images/9.jpg', './images/10.jpg', './images/11.jpg', './images/12.jpg'
         ];
-        let currentIndex = 0;
+        let current = 0;
 
         app.load('./scene.splinecode').then(() => {
             const rect = app.findObjectByName('Falsecolor Rectangle');
 
-            // Function to update the 3D rectangle texture
-            const updateGallery = (index) => {
+            const setTexture = (index) => {
                 const loader = new THREE.TextureLoader();
-                loader.load(imageList[index], (texture) => {
-                    rect.material.map = texture;
+                loader.load(photos[index], (tex) => {
+                    rect.material.map = tex;
                     rect.material.needsUpdate = true;
                 });
             };
 
-            // Initial load
-            updateGallery(currentIndex);
+            // Initial Image
+            setTexture(current);
 
-            // Navigation Logic
-            document.getElementById('next').onclick = () => {
-                currentIndex = (currentIndex + 1) % imageList.length;
-                updateGallery(currentIndex);
+            // Controls
+            document.getElementById('nextBtn').onclick = () => {
+                current = (current + 1) % photos.length;
+                setTexture(current);
             };
 
-            document.getElementById('prev').onclick = () => {
-                currentIndex = (currentIndex - 1 + imageList.length) % imageList.length;
-                updateGallery(currentIndex);
+            document.getElementById('prevBtn').onclick = () => {
+                current = (current - 1 + photos.length) % photos.length;
+                setTexture(current);
             };
 
             // Click Rectangle to Expand
             app.on('mouseDown', (e) => {
                 if (e.target.name === 'Falsecolor Rectangle') {
-                    const lightbox = document.getElementById('lightbox');
-                    document.getElementById('expanded-img').src = imageList[currentIndex];
-                    lightbox.style.display = 'flex';
+                    const lb = document.getElementById('lightbox');
+                    document.getElementById('fullView').src = photos[current];
+                    lb.style.display = 'flex';
                 }
             });
         });
 
-        // Close Lightbox
         document.getElementById('lightbox').onclick = function() {
             this.style.display = 'none';
         };

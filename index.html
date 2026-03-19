@@ -3,35 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Underwater Archive</title>
+    <title>Underwater Archive</title>
     <style>
         body, html { margin: 0; padding: 0; background: #000; overflow: hidden; }
-        /* Ensure the canvas fills the screen */
-        #canvas3d { width: 100vw; height: 100vh; display: block; }
+        canvas { display: block; width: 100vw; height: 100vh; }
 
-        .nav-arrow {
+        /* A subtle hint for the user */
+        #hint {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 60px;
-            cursor: pointer;
-            z-index: 10;
-            padding: 20px;
-            transition: color 0.3s;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.3);
+            font-family: serif;
+            letter-spacing: 2px;
+            font-size: 12px;
+            pointer-events: none;
+            text-transform: uppercase;
         }
-        .nav-arrow:hover { color: #fff; }
-        #prevBtn { left: 10px; }
-        #nextBtn { right: 10px; }
     </style>
 </head>
 <body>
 
-    <button id="prevBtn" class="nav-arrow">&lt;</button>
-    <button id="nextBtn" class="nav-arrow">&gt;</button>
-
+    <div id="hint">Click the frame to explore</div>
     <canvas id="canvas3d"></canvas>
 
     <script type="module">
@@ -47,42 +41,30 @@
         ];
         let index = 0;
 
-        // Start the loading process
-        app.load('./scene.splinecode')
-            .then(() => {
-                console.log("Spline scene loaded successfully.");
-                const rect = app.findObjectByName('Falsecolor Rectangle');
+        app.load('./scene.splinecode').then(() => {
+            const rect = app.findObjectByName('Falsecolor Rectangle');
 
-                if (rect) {
-                    console.log("Rectangle found: Falsecolor Rectangle");
-                    
-                    const applyTexture = (i) => {
-                        const loader = new THREE.TextureLoader();
-                        loader.load(images[i], (texture) => {
-                            rect.material.map = texture;
-                            rect.material.needsUpdate = true;
-                            console.log("Displaying image: " + images[i]);
-                        });
-                    };
+            const applyTexture = (i) => {
+                if (!rect) return;
+                const loader = new THREE.TextureLoader();
+                loader.load(images[i], (tex) => {
+                    rect.material.map = tex;
+                    rect.material.needsUpdate = true;
+                });
+            };
 
+            // Display the first image immediately
+            applyTexture(index);
+
+            // The rectangle now acts as the button
+            app.on('mouseDown', (e) => {
+                if (e.target.name === 'Falsecolor Rectangle') {
+                    // Move to the next image
+                    index = (index + 1) % images.length;
                     applyTexture(index);
-
-                    document.getElementById('nextBtn').onclick = () => {
-                        index = (index + 1) % images.length;
-                        applyTexture(index);
-                    };
-
-                    document.getElementById('prevBtn').onclick = () => {
-                        index = (index - 1 + images.length) % images.length;
-                        applyTexture(index);
-                    };
-                } else {
-                    console.error("Error: Could not find an object named 'Falsecolor Rectangle'. Check your Spline sidebar.");
                 }
-            })
-            .catch((err) => {
-                console.error("Error loading the Spline scene: ", err);
             });
+        });
     </script>
 </body>
 </html>

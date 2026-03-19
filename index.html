@@ -3,52 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submerged Archive</title>
+    <title>Underwater Archive</title>
     <style>
         body, html { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: serif; }
-        
-        /* The Canvas for your 3D World */
         #canvas3d { width: 100vw; height: 100vh; display: block; }
 
-        /* Cinematic Navigation Arrows */
-        .arrow {
+        .nav-arrow {
             position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.2); /* Faded until hovered */
-            font-size: 100px;
+            color: white;
+            font-size: 60px;
             font-weight: 100;
             cursor: pointer;
             z-index: 10;
-            transition: 0.4s;
-            padding: 0 40px;
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.5s ease, transform 0.3s;
             user-select: none;
+            pointer-events: none; /* Cannot click while hidden */
         }
-        .arrow:hover { color: #fff; transform: translateY(-50%) scale(1.1); }
-        #prev { left: 5%; }
-        #next { right: 5%; }
+        
+        .nav-arrow.visible {
+            opacity: 0.4;
+            pointer-events: auto;
+        }
 
-        /* Lightbox for Expansion */
-        #lightbox {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 100;
-            justify-content: center;
-            align-items: center;
-        }
-        #lightbox img { max-width: 85%; max-height: 85%; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 50px rgba(255,255,255,0.05); }
+        .nav-arrow:hover { opacity: 1; transform: scale(1.2); }
     </style>
 </head>
 <body>
 
-    <button id="prev" class="arrow">‹</button>
-    <button id="next" class="arrow">›</button>
-
-    <div id="lightbox"><img id="view" src=""></div>
+    <button id="prevBtn" class="nav-arrow">‹</button>
+    <button id="nextBtn" class="nav-arrow">›</button>
 
     <canvas id="canvas3d"></canvas>
 
@@ -58,59 +44,59 @@
         const canvas = document.getElementById('canvas3d');
         const app = new Application(canvas);
 
-        // Your 12 images must be in a folder named 'images' on GitHub
-        const photoLinks = [
-            './images/1.jpg', './images/2.jpg', './images/3.jpg', './images/4.jpg',
-            './images/5.jpg', './images/6.jpg', './images/7.jpg', './images/8.jpg',
-            './images/9.jpg', './images/10.jpg', './images/11.jpg', './images/12.jpg'
-        ];
-        let current = 0;
+        const images = ['./images/1.jpg', './images/2.jpg', './images/3.jpg', './images/4.jpg', './images/5.jpg', './images/6.jpg', './images/7.jpg', './images/8.jpg', './images/9.jpg', './images/10.jpg', './images/11.jpg', './images/12.jpg'];
+        let index = 0;
 
         app.load('./scene.splinecode').then(() => {
-            // Finding the rectangle by the name you set in the sidebar
             const rect = app.findObjectByName('Falsecolor Rectangle');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
 
-            const loadPhoto = (i) => {
-                if (!rect) {
-                    console.error("The name 'Falsecolor Rectangle' was not found in the 3D scene.");
-                    return;
-                }
-                
+            const updateGallery = (i) => {
                 const loader = new THREE.TextureLoader();
-                loader.load(photoLinks[i], (texture) => {
-                    // This forces the image to stay inside the bounds of your rectangle
-                    rect.material.map = texture;
+                loader.load(images[i], (tex) => {
+                    rect.material.map = tex;
                     rect.material.needsUpdate = true;
-                }, undefined, (err) => {
-                    console.error("Failed to load image: " + photoLinks[i] + ". Check your 'images' folder on GitHub.");
                 });
             };
 
-            // Initial display
-            loadPhoto(current);
+            updateGallery(index);
 
-            document.getElementById('next').onclick = () => {
-                current = (current + 1) % photoLinks.length;
-                loadPhoto(current);
-            };
+            // This loop runs every frame to track the rectangle
+            function animate() {
+                if (rect) {
+                    // 1. Check if the object is visible and has opacity
+                    // We use a threshold to decide when to show the arrows
+                    const isVisible = rect.visible && rect.opacity > 0.1;
 
-            document.getElementById('prev').onclick = () => {
-                current = (current - 1 + photoLinks.length) % photoLinks.length;
-                loadPhoto(current);
-            };
+                    if (isVisible) {
+                        // 2. Project the 3D position to 2D screen coordinates
+                        const screenPos = app.project(rect.position);
+                        
+                        // 3. Position arrows beside the rectangle
+                        // We offset them by about 20% of the screen width
+                        const offset = window.innerWidth * 0.15;
 
-            // Detect click on the 3D rectangle to expand
-            app.on('mouseDown', (e) => {
-                if (e.target.name === 'Falsecolor Rectangle') {
-                    document.getElementById('view').src = photoLinks[current];
-                    document.getElementById('lightbox').style.display = 'flex';
+                        prevBtn.style.left = `${screenPos.x - offset}px`;
+                        prevBtn.style.top = `${screenPos.y}px`;
+                        nextBtn.style.left = `${screenPos.x + offset}px`;
+                        nextBtn.style.top = `${screenPos.y}px`;
+
+                        prevBtn.classList.add('visible');
+                        nextBtn.classList.add('visible');
+                    } else {
+                        prevBtn.classList.remove('visible');
+                        nextBtn.classList.remove('visible');
+                    }
                 }
-            });
-        });
+                requestAnimationFrame(animate);
+            }
 
-        document.getElementById('lightbox').onclick = () => {
-            document.getElementById('lightbox').style.display = 'none';
-        };
+            animate();
+
+            nextBtn.onclick = () => { index = (index + 1) % images.length; updateGallery(index); };
+            prevBtn.onclick = () => { index = (index - 1 + images.length) % images.length; updateGallery(index); };
+        });
     </script>
 </body>
 </html>

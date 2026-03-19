@@ -3,34 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Underwater Archive</title>
+    <title>Submerged Archive</title>
     <style>
         body, html { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: serif; }
         
-        /* The 3D Canvas must fill the entire screen */
+        /* The Canvas for your 3D World */
         #canvas3d { width: 100vw; height: 100vh; display: block; }
 
-        /* Elegant Navigation Arrows */
-        .nav-arrow {
+        /* Cinematic Navigation Arrows */
+        .arrow {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 80px;
+            color: rgba(255, 255, 255, 0.2); /* Faded until hovered */
+            font-size: 100px;
             font-weight: 100;
             cursor: pointer;
             z-index: 10;
-            transition: color 0.4s, transform 0.4s;
-            padding: 0 30px;
+            transition: 0.4s;
+            padding: 0 40px;
             user-select: none;
         }
-        .nav-arrow:hover { color: #fff; transform: translateY(-50%) scale(1.1); }
-        #prevBtn { left: 5%; }
-        #nextBtn { right: 5%; }
+        .arrow:hover { color: #fff; transform: translateY(-50%) scale(1.1); }
+        #prev { left: 5%; }
+        #next { right: 5%; }
 
-        /* Lightbox for the expanded view */
+        /* Lightbox for Expansion */
         #lightbox {
             display: none;
             position: fixed;
@@ -40,15 +40,15 @@
             justify-content: center;
             align-items: center;
         }
-        #lightbox img { max-width: 90%; max-height: 90%; border: 1px solid rgba(255,255,255,0.1); }
+        #lightbox img { max-width: 85%; max-height: 85%; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 0 50px rgba(255,255,255,0.05); }
     </style>
 </head>
 <body>
 
-    <button id="prevBtn" class="nav-arrow">‹</button>
-    <button id="nextBtn" class="nav-arrow">›</button>
+    <button id="prev" class="arrow">‹</button>
+    <button id="next" class="arrow">›</button>
 
-    <div id="lightbox"><img id="fullView" src=""></div>
+    <div id="lightbox"><img id="view" src=""></div>
 
     <canvas id="canvas3d"></canvas>
 
@@ -58,44 +58,52 @@
         const canvas = document.getElementById('canvas3d');
         const app = new Application(canvas);
 
-        const images = [
+        // Your 12 images must be in a folder named 'images' on GitHub
+        const photoLinks = [
             './images/1.jpg', './images/2.jpg', './images/3.jpg', './images/4.jpg',
             './images/5.jpg', './images/6.jpg', './images/7.jpg', './images/8.jpg',
             './images/9.jpg', './images/10.jpg', './images/11.jpg', './images/12.jpg'
         ];
-        let index = 0;
+        let current = 0;
 
         app.load('./scene.splinecode').then(() => {
-            // This name must match the sidebar name in Spline exactly
+            // Finding the rectangle by the name you set in the sidebar
             const rect = app.findObjectByName('Falsecolor Rectangle');
 
-            const applyTexture = (i) => {
-                if (!rect) return;
+            const loadPhoto = (i) => {
+                if (!rect) {
+                    console.error("The name 'Falsecolor Rectangle' was not found in the 3D scene.");
+                    return;
+                }
+                
                 const loader = new THREE.TextureLoader();
-                loader.load(images[i], (tex) => {
-                    rect.material.map = tex;
+                loader.load(photoLinks[i], (texture) => {
+                    // This forces the image to stay inside the bounds of your rectangle
+                    rect.material.map = texture;
                     rect.material.needsUpdate = true;
+                }, undefined, (err) => {
+                    console.error("Failed to load image: " + photoLinks[i] + ". Check your 'images' folder on GitHub.");
                 });
             };
 
-            // Display the first image immediately
-            applyTexture(index);
+            // Initial display
+            loadPhoto(current);
 
-            document.getElementById('nextBtn').onclick = () => {
-                index = (index + 1) % images.length;
-                applyTexture(index);
+            document.getElementById('next').onclick = () => {
+                current = (current + 1) % photoLinks.length;
+                loadPhoto(current);
             };
 
-            document.getElementById('prevBtn').onclick = () => {
-                index = (index - 1 + images.length) % images.length;
-                applyTexture(index);
+            document.getElementById('prev').onclick = () => {
+                current = (current - 1 + photoLinks.length) % photoLinks.length;
+                loadPhoto(current);
             };
 
+            // Detect click on the 3D rectangle to expand
             app.on('mouseDown', (e) => {
                 if (e.target.name === 'Falsecolor Rectangle') {
-                    const lb = document.getElementById('lightbox');
-                    document.getElementById('fullView').src = images[index];
-                    lb.style.display = 'flex';
+                    document.getElementById('view').src = photoLinks[current];
+                    document.getElementById('lightbox').style.display = 'flex';
                 }
             });
         });
